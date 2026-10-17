@@ -1,10 +1,19 @@
-:root { color-scheme: light; --ink:#172033; --muted:#5f6b7a; --accent:#176b87; --paper:#fff; --wash:#eef7f8; }
+:root { color-scheme: light; --ink:#172033; --muted:#5f6b7a; --accent:#176b87; --paper:#fff; --wash:#eef7f8; --code:#13212b; }
 * { box-sizing: border-box; }
-body { margin:0; background:var(--wash); color:var(--ink); font: 16px/1.7 system-ui,-apple-system,"Segoe UI",sans-serif; }
-main { max-width: 900px; margin: 36px auto; padding: 0 22px 64px; }
-.card { background:var(--paper); border:1px solid #d7e5e8; border-radius:16px; padding:28px 34px; box-shadow:0 10px 32px #1c4a5b12; }
-h1,h2,h3 { line-height:1.25; letter-spacing:-.02em; } h1 { font-size:2.2rem; } h2 { margin-top:2rem; }
-a { color:var(--accent); } code,pre { font-family: ui-monospace,SFMono-Regular,Menlo,monospace; } pre { background:#13212b; color:#e8f4f5; padding:16px; border-radius:10px; overflow:auto; }
-.callout { background:#edf8f6; border-left:4px solid #2a9d8f; padding:12px 16px; border-radius:8px; }
-.quiz { background:#fff8e8; border-left:4px solid #e9a23b; padding:12px 16px; border-radius:8px; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin:0; background:var(--wash); color:var(--ink); font:16px/1.7 system-ui,-apple-system,"Segoe UI",sans-serif; }
+main { max-width:900px; margin:0 auto; padding:16px 12px 40px; }
+.card { background:var(--paper); border:1px solid #d7e5e8; border-radius:14px; padding:20px 16px; box-shadow:0 8px 24px #1c4a5b12; }
+h1,h2,h3 { line-height:1.25; letter-spacing:-.02em; } h1 { font-size:clamp(1.7rem,7vw,2.2rem); } h2 { margin-top:1.7rem; font-size:clamp(1.25rem,5vw,1.6rem); }
+p,li { overflow-wrap:anywhere; } ul,ol { padding-left:1.35rem; }
+a { color:var(--accent); }
+code,pre { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+.code-block { position:relative; margin:1rem 0; padding:42px 12px 12px; background:var(--code); color:#e8f4f5; border-radius:10px; overflow:auto; font-size:.86rem; line-height:1.55; -webkit-overflow-scrolling:touch; }
+.code-block code { white-space:pre; }
+.copy-button { position:absolute; top:8px; right:8px; border:1px solid #6b8792; border-radius:7px; padding:5px 9px; background:#23404d; color:#fff; font:inherit; font-size:.78rem; cursor:pointer; }
+.copy-button:active { transform:scale(.97); }
+.callout,.quiz { padding:11px 13px; border-radius:8px; }
+.callout { background:#edf8f6; border-left:4px solid #2a9d8f; }
+.quiz { background:#fff8e8; border-left:4px solid #e9a23b; }
 small,.muted { color:var(--muted); }
+@media (min-width:700px) { main { padding:36px 22px 64px; } .card { padding:28px 34px; } .code-block { padding:16px; font-size:.95rem; } .copy-button { top:8px; } }
