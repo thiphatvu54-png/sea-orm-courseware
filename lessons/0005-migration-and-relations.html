@@ -19,4 +19,22 @@ impl Related&lt;super::order::Entity&gt; for Entity {
     fn to() -&gt; RelationDef {
         Relation::Order.def()
     }
-}</code></pre><p>一对多关系通常由父实体的 <code>has_many</code> 和子实体的外键配合。关系声明不会自动加载数据，查询时仍要明确使用 <code>find_with_related</code> 或关联查询。</p><h2>4. 回忆练习</h2><ol><li>为什么生产环境不应每次启动都执行建表 SQL？</li><li><code>up</code> 和 <code>down</code> 分别承担什么职责？</li><li>声明 <code>has_many</code> 后，如何主动加载关联记录？</li></ol><p class="quiz"><b>提交答案后再继续：</b>用一句话区分 migration 和 Entity，并写出“父实体查询子实体”时要调用的 SeaORM 方法名。</p><p><a href="0004-update-delete-transaction.html">← 第 4 课</a> · <a href="../reference/sea-orm-cheatsheet.html">速查表</a> · <a href="https://www.sea-ql.org/SeaORM/docs/migration/setting-up-migration/">官方 Migration 文档</a></p></article></main></body></html>
+}</code></pre><p>一对多关系通常由父实体的 <code>has_many</code> 和子实体的外键配合。关系声明不会自动加载数据，查询时仍要明确使用 <code>find_with_related</code> 或关联查询。</p><h2>4. 实际例子：用户和订单</h2><p>假设电商系统新增订单表。Migration 负责建表，Entity 关系负责查询“某个用户的全部订单”。</p><pre><code>Table::create()
+    .table(Order::Table)
+    .if_not_exists()
+    .col(ColumnDef::new(Order::Id).integer().not_null().auto_increment().primary_key())
+    .col(ColumnDef::new(Order::UserId).integer().not_null())
+    .col(ColumnDef::new(Order::Amount).decimal().not_null())
+    .foreign_key(
+        ForeignKey::create()
+            .from(Order::Table, Order::UserId)
+            .to(User::Table, User::Id),
+    )
+    .to_owned();</code></pre><p>迁移成功后，父实体可以显式加载关联记录：</p><pre><code>let (users, orders) = user::Entity::find()
+    .find_with_related(order::Entity)
+    .all(&db)
+    .await?;
+
+for (user, user_orders) in users.into_iter().zip(orders) {
+    println!("{} has {} orders", user.email, user_orders.len());
+}</code></pre><p>这里的查询结果是“一个用户和它对应的订单列表”。如果只需要单个用户，也可以先按主键过滤，再调用 find_with_related。关系查询不会自动发生，必须在查询代码中明确指定。</p><h2>5. 回忆练习</h2><ol><li>为什么生产环境不应每次启动都执行建表 SQL？</li><li><code>up</code> 和 <code>down</code> 分别承担什么职责？</li><li>声明 <code>has_many</code> 后，如何主动加载关联记录？</li></ol><p class="quiz"><b>提交答案后再继续：</b>用一句话区分 migration 和 Entity，并写出“父实体查询子实体”时要调用的 SeaORM 方法名。</p><p><a href="0004-update-delete-transaction.html">← 第 4 课</a> · <a href="../reference/sea-orm-cheatsheet.html">速查表</a> · <a href="https://www.sea-ql.org/SeaORM/docs/migration/setting-up-migration/">官方 Migration 文档</a></p></article></main></body></html>
