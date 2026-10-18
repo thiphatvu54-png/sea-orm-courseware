@@ -1,0 +1,21 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第 6 课：find_with_related 实战</title><link rel="stylesheet" href="../assets/style.css"></head><body><main><article class="card"><p class="muted">Lesson 0006 · 约 20 分钟</p><h1>读懂 find_with_related 的返回值</h1><p>第 5 课已经建立用户和订单的关系。本课专门练习如何查询父记录及其子记录，并正确处理结果中的一对多结构。</p><h2>1. 最小查询</h2><pre><code>let rows = user::Entity::find()
+    .find_with_related(order::Entity)
+    .all(&amp;db)
+    .await?;</code></pre><p>rows 不是单个用户，也不是扁平的订单数组，而是一个二元组：每个元素包含一个 user::Model 和对应的 Vec&lt;order::Model&gt;。</p><h2>2. 遍历用户和订单</h2><pre><code>for (user, orders) in rows {
+    println!("{}: {} orders", user.email, orders.len());
+
+    for order in orders {
+        println!("order #{} amount={}", order.id, order.amount);
+    }
+}</code></pre><p>没有订单的用户仍然会出现在结果中，只是对应的 orders 为空数组。这一点与 SQL 的 LEFT JOIN 语义相似。</p><h2>3. 先过滤父记录</h2><pre><code>let rows = user::Entity::find()
+    .filter(user::Column::Email.eq("alice@example.com"))
+    .find_with_related(order::Entity)
+    .all(&amp;db)
+    .await?;</code></pre><p>过滤条件应尽量放在数据库查询中，而不是把所有用户和订单读到 Rust 内存后再筛选。</p><h2>4. 只需要一个父记录时</h2><pre><code>let result = user::Entity::find_by_id(1)
+    .find_with_related(order::Entity)
+    .all(&amp;db)
+    .await?;
+
+if let Some((user, orders)) = result.into_iter().next() {
+    println!("{} has {} orders", user.email, orders.len());
+}</code></pre><p>关联查询仍然返回集合，因为数据库查询本质上可能产生多行。要得到单个父对象，可以在 Rust 侧取第一个元素并处理空结果。</p><div class="callout"><b>性能提醒：</b>关联查询适合一次加载明确的关系；关系层级很深或数据量很大时，应增加过滤、分页和列选择，避免一次读取过多数据。</div><h2>5. 回忆练习</h2><ol><li>find_with_related 返回的二元组两部分分别是什么？</li><li>一个用户没有订单时，orders 是什么值？</li><li>为什么应该尽量在数据库层 filter，而不是查询后再过滤？</li></ol><p class="quiz"><b>提交答案后再继续：</b>写出查询所有用户及其订单的核心链式调用，并解释为什么结果中仍然保留没有订单的用户。</p><p><a href="0005-migration-and-relations.html">← 第 5 课</a> · <a href="../reference/sea-orm-cheatsheet.html">速查表</a> · <a href="https://www.sea-ql.org/SeaORM/docs/relation/query-relations/">官方关系查询文档</a></p></article></main></body></html>
