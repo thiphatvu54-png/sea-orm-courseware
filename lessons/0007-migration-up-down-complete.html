@@ -1,0 +1,33 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第 7 课：Migration 的 up 与 down</title><link rel="stylesheet" href="../assets/style.css"></head><body><main><article class="card"><p class="muted">Lesson 0007 · 约 25 分钟</p><h1>用一个完整例子巩固 up 和 down</h1><p>场景：线上已经有 users 表，现在要新增一个可空的 nickname 字段。我们用一条新的 migration 完成变更，并演示如何撤销。</p><h2>1. 生成 migration</h2><pre><code>sea-orm-cli migrate generate add-nickname-to-user</code></pre><p>CLI 会在 migration/src 下生成一个带时间戳的文件。时间戳用于排序，名称用于阅读和审查。已经发布的旧 migration 不要直接改，新增一条更安全。</p><h2>2. 编写 up：向前推进</h2><pre><code>#[derive(DeriveMigrationName)]
+pub struct Migration;
+
+#[async_trait::async_trait]
+impl MigrationTrait for Migration {
+    async fn up(&amp;self, manager: &amp;SchemaManager) -&gt; Result&lt;(), DbErr&gt; {
+        manager
+            .alter_table(
+                Table::alter()
+                    .table(User::Table)
+                    .add_column(ColumnDef::new(User::Nickname).string().null())
+                    .to_owned(),
+            )
+            .await
+    }
+
+    async fn down(&amp;self, manager: &amp;SchemaManager) -&gt; Result&lt;(), DbErr&gt; {
+        todo!()
+    }
+}</code></pre><p>up 的意思是：把旧结构推进到新结构。这里不会删除已有用户，只是给 users 增加一个允许为空的 nickname 列。</p><h2>3. 编写 down：撤销这一条</h2><pre><code>async fn down(&amp;self, manager: &amp;SchemaManager) -&gt; Result&lt;(), DbErr&gt; {
+    manager
+        .alter_table(
+            Table::alter()
+                .table(User::Table)
+                .drop_column(User::Nickname)
+                .to_owned(),
+        )
+        .await
+}</code></pre><p>down 描述如何把这一条 migration 的结构变更撤销掉。执行后 nickname 列消失，存储在该列的数据也会消失，所以生产环境回滚前必须确认备份和数据影响。</p><h2>4. 执行和观察状态</h2><pre><code>sea-orm-cli migrate status
+sea-orm-cli migrate up
+sea-orm-cli migrate status
+sea-orm-cli migrate down
+sea-orm-cli migrate status</code></pre><p>执行 up 前，状态里这条 migration 通常是 pending；执行成功后变成 applied。执行一次 down 会撤销最近一次 applied migration，然后状态回到上一个版本。</p><h2>5. 完整时间线</h2><ol><li>数据库版本为 v1，users 没有 nickname。</li><li>执行 up，数据库变为 v2，users 有 nickname。</li><li>应用升级后开始读写 nickname。</li><li>发现问题，先备份并确认影响，再执行 down。</li><li>数据库回到 v1，nickname 列和其中数据被删除。</li></ol><div class="callout"><b>核心规则：</b>up 改结构，down 撤销同一条结构变更；migration 历史记录决定哪些 up 已执行。回滚结构不等于恢复数据，数据恢复依赖备份。</div><h2>6. 回忆练习</h2><ol><li>为什么新增字段通常应该新建 migration，而不是修改旧 migration？</li><li>本例执行 down 后，nickname 中已有的数据会怎样？</li><li>为什么生产执行 down 前要先确认备份？</li></ol><p class="quiz"><b>提交答案后再继续：</b>用自己的话描述 v1 → up → v2 → down → v1 的全过程，并指出哪一步可能造成数据丢失。</p><p><a href="0006-find-with-related.html">← 第 6 课</a> · <a href="../reference/sea-orm-cheatsheet.html">速查表</a> · <a href="https://www.sea-ql.org/SeaORM/docs/migration/setting-up-migration/">官方 Migration 文档</a></p></article></main></body></html>
