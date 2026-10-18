@@ -1,16 +1,31 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ç¬¬ 3 è¯¾ï¼šæ’å…¥å¹¶æŸ¥è¯¢ç”¨æˆ·</title><link rel="stylesheet" href="../assets/style.css"></head><body><main><article class="card"><p class="muted">Lesson 0003 Â· çº¦ 20 åˆ†é’Ÿ</p><h1>ç”¨ Entity æ’å…¥ä¸:(c;ï#9a£yå*9§éz+è¹¢¢¹k ú+îùfç¹§iOÚO¹."¹. :+ï¹mì¹îãùkï9aiHÛÙO\Ù\œÏØÛÙOˆ:(j8à ¹§+:+ï¹¢¢ˆÔS:(j9îäù§¡:/ç¹£©yb,ÙXSÔ“H9æ¡Xİ]™S[Ù[9d£9§éz+èˆT{ï#9k£9¢$9. 9«(ycëúj£:+àyæ¡Ô•Q:eëyã«øà ÜŒKˆ9k¦¹.by§ 9l#È[]OÚ™OÛÙO\ÙHÙXWÛÜ›N™[]Nœ™[YNŠÂ‚ˆÖÙ\š]™JÛÛ™KXYË\š]™Q[]S[Ù[
-WBˆÖÜÙXWÛÜ›JX›WÛ˜[YHH\Ù\œÈŠWBœXˆİXİ[Ù[ÂˆÖÜÙXWÛÜ›Jš[X\WÚÙ^JWBˆXˆYˆLÌ‹ˆXˆ[XZ[ˆİš[™ËˆXˆ\Ü^WÛ˜[YNˆİš[™ËˆXˆÜ™X]YØ]ˆİš[™ËŸB‚ˆÖÙ\š]™JÛÜKÛÛ™KXYË[[R]\‹\š]™T™[][ÛŠWBœXˆ[[H™[][ÛˆßB‚š[\Xİ]™S[Ù[™Z]š[Üˆ›ÜˆXİ]™S[Ù[ßOØÛÙOÜ™OÛÙO“[Ù[ØÛÙOˆ:(j9é.¹§éz+è¹îäù§§9æ¡9. :(c;ï&ÏÛÙOXİ]™S[Ù[ØÛÙOˆ:(j9é.º) y£ä¹aiy¢%¹¦í9¥¬9æ¡9`/;ï&ÏÛÙO‘[]OØÛÙOˆ9£ä9/¦ù§éz+è¹aiycèøà ÜŒ‹ˆ9£ä¹aiy. :(cÚ™OÛÙO\ÙHÙXWÛÜ›NĞXİ]™S[Ù[˜Z]Ù]NÂ‚›]\Ù\ˆH\Ù\Xİ]™S[Ù[Âˆ[XZ[ˆÙ]
-˜[XÙP^[\K˜ÛÛH‹×ÛİÛ™Y
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ç¬¬ 3 è¯¾ï¼šæ’å…¥å¹¶æŸ¥è¯¢ç”¨æˆ·</title><link rel="stylesheet" href="../assets/style.css"></head><body><main><article class="card"><p class="muted">Lesson 0003 Â· çº¦ 20 åˆ†é’Ÿ</p><h1>ç”¨ Entity æ’å…¥ä¸€è¡Œï¼Œå†ç”¨æŸ¥è¯¢æŠŠå®ƒè¯»å›æ¥</h1><p>ä¸Šä¸€è¯¾å·²ç»å¯¼å…¥ <code>users</code> è¡¨ã€‚æœ¬è¯¾æŠŠ SQL è¡¨ç»“æ„è¿æ¥åˆ° SeaORM çš„ ActiveModel å’ŒæŸ¥è¯¢ APIï¼Œå®Œæˆä¸€æ¬¡å¯éªŒè¯çš„ CRUD é—­ç¯ã€‚</p><h2>1. å®šä¹‰æœ€å° Entity</h2><pre><code>use sea_orm::entity::prelude::*;
 
-JKˆ\Ü^WÛ˜[YNˆÙ]
-[XÙH‹×ÛİÛ™Y
+#[derive(Clone, Debug, DeriveEntityModel)]
+#[sea_orm(table_name = "users")]
+pub struct Model {
+    #[sea_orm(primary_key)]
+    pub id: i32,
+    pub email: String,
+    pub display_name: String,
+    pub created_at: String,
+}
 
-JKˆ‹‘Y˜][™Y˜][
+#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {}
 
-BŸNÂ›][œÙ\YH\Ù\‹š[œÙ\
-	™ŠK˜]ØZ]ÎÂ˜\ÜÙ\Ù\HJ[œÙ\Y™[XZ[˜[XÙP^[\K˜ÛÛHŠNÏØÛÙOÜ™O¹¬¨y§"y¢bùbª:-bù`/9æ¡:!ê¹h§¹..úe+¹d£:næ:+©9¥íºeí9.©9îæy¥l9£k¹n¤ùå'ù¢$8à ÛÙOš[œÙ\ØÛÙOˆ:/å9fç¹k£9¥m9æ¡ÛÙO“[Ù[ØÛÙO»ï#9cëù.ézjk9."¹¥«z* 8à ÜŒËˆ9§éz+è¹nmºj£:+àOÚ™OÛÙO\ÙHÙXWÛÜ›NĞÛÛ[[•˜Z][]U˜Z]]Y\Qš[\ŸNÂ‚›]›İ[™H\Ù\‘[]N™š[™
+impl ActiveModelBehavior for ActiveModel {}</code></pre><p><code>Model</code> è¡¨ç¤ºæŸ¥è¯¢ç»“æœçš„ä¸€è¡Œï¼›<code>ActiveModel</code> è¡¨ç¤ºè¦æ’å…¥æˆ–æ›´æ–°çš„å€¼ï¼›<code>Entity</code> æä¾›æŸ¥è¯¢å…¥å£ã€‚</p><h2>2. æ’å…¥ä¸€è¡Œ</h2><pre><code>use sea_orm::{ActiveModelTrait, Set};
 
-Bˆ™š[\Š\Ù\ÛÛ[[‘[XZ[™\J˜[XÙP^[\K˜ÛÛHŠJBˆ›Û™J	™ŠBˆ˜]ØZ]ÎÂ‚˜\ÜÙ\Ù\HJ›İ[™›X\
-_K™\Ü^WÛ˜[YJKÛÛYJ[XÙH‹×ÛİÛ™Y
+let user = user::ActiveModel {
+    email: Set("alice@example.com".to_owned()),
+    display_name: Set("Alice".to_owned()),
+    ..Default::default()
+};
+let inserted = user.insert(&db).await?;
+assert_eq!(inserted.email, "alice@example.com");</code></pre><p>æ²¡æœ‰æ‰‹åŠ¨èµ‹å€¼çš„è‡ªå¢ä¸»é”®å’Œé»˜è®¤æ—¶é—´äº¤ç»™æ•°æ®åº“ç”Ÿæˆã€‚<code>insert</code> è¿”å›å®Œæ•´çš„ <code>Model</code>ï¼Œå¯ä»¥é©¬ä¸Šæ–­è¨€ã€‚</p><h2>3. æŸ¥è¯¢å¹¶éªŒè¯</h2><pre><code>use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
-JJNÏØÛÙOÜ™OÛÙO™š[\ØÛÙOˆ9îá9d"9§hy.í»ï#ÛÙO›Û™OØÛÙOˆ9§ 9i&¹cå¹. :(c9nmº/å9fçˆÛÙO“Ü[Û‰›Ó[Ù[	™İÏØÛÙO¸à ¹¢o¹.#yb,9¥l9£k¹¥í¹o¥ùb,ÛÙO“›Û™OØÛÙO»ï#: #9.#y¦+ùo ¹n.8à Ü]ˆÛ\ÜÏH˜Ø[İ]¹alúe+¹oàù¦n¹ª(yg¢ûï&Ø‘[]H9¦+ù§éz+è¹aiycèûï#Xİ]™S[Ù[9¦+ùa¦yaiz#byê/ûï#[Ù[9¦+ù¥l9£k¹n¤ú/å9fç¹æ¡9cêº+îùîäù§§8à ¹¥l9£k¹n¤ùî©¹§gù.ãyá-¹¦+ù§ 9d#¹. :`dúf,¹î¯øà Ù]ˆ9fç¹oá¹îàù.hÚÛO¹..¹.à9.b9£ä¹aiy¥í¹/oùå*ÛÙOXİ]™S[Ù[ØÛÙO»ï#9§éz+è¹¥í¹/oùå*ÛÙO“[Ù[ØÛÙO»ï'ÏÛOO¹¢¢º`«¹ë¬y¥.y¢$9mì¹kf9g*9æ¡9`/9¥í»ï#9dê¹. 9l`¹/&ºf.ù«h¹a¦yai{ï'ÏÛOO¹¢¢ˆÛÙO›Û™J	˜[\ÙŠOØÛÙOˆ9¥.y¢$9§éz+è¹aj:`ê9å*9¢-ûï#9n¥:+éy/oùå*9dê¹.*¹¥®y¬å{ï'ÏÛOÛÛÛ\ÜÏHœ]Z^ˆ¹£ä9.©9ëe9¨b9d#¹a£yîéùîë{ï&Ø¹a¦yaî¹£ä¹aiyd£9£"z`«¹ë¬y§éz+è¹æ¡9¨.9oàúdï¹o#ú, ùå*;ï#9nmº)èúaâˆÛÙO“Ü[Û‰›Ó[Ù[	™İÏØÛÙOˆ9æ¡9d*ù.bxà ÜH™YHŒ‹XÜ™X]K]X›KYœ›ÛK\Ü[š[¸¡¤9ë+ˆ:+ïØOˆ0­ÈH™YH‹‹‹Ü™Y™\™[˜ÙKÜÙXK[Ü›KXÚX]ÚY]š[º`'ù§éz(jØOˆ0­ÈH™YHšÎ‹ËİİİËœÙXK\[›Ü™ËÔÙXSÔ“KÙØÜËØ˜\ÚXËXÜYÚ[œÙ\È¹k¦9¥®H[œÙ\9¥¡ù¨hÏØOÜØ\XÛOÛXZ[Ø›ÙOÚ[‚
+let found = user::Entity::find()
+    .filter(user::Column::Email.eq("alice@example.com"))
+    .one(&db)
+    .await?;
+
+assert_eq!(found.map(|m| m.display_name), Some("Alice".to_owned()));</code></pre><p><code>filter</code> ç»„åˆæ¡ä»¶ï¼Œ<code>one</code> æœ€å¤šå–ä¸€è¡Œå¹¶è¿”å› <code>Option&lt;Model&gt;</code>ã€‚æ‰¾ä¸åˆ°æ•°æ®æ—¶å¾—åˆ° <code>None</code>ï¼Œè€Œä¸æ˜¯å¼‚å¸¸ã€‚</p><div class="callout"><b>å…³é”®å¿ƒæ™ºæ¨¡å‹ï¼š</b>Entity æ˜¯æŸ¥è¯¢å…¥å£ï¼ŒActiveModel æ˜¯å†™å…¥è‰ç¨¿ï¼ŒModel æ˜¯æ•°æ®åº“è¿”å›çš„åªè¯»ç»“æœã€‚æ•°æ®åº“çº¦æŸä»ç„¶æ˜¯æœ€åä¸€é“é˜²çº¿ã€‚</div><h2>4. å›å¿†ç»ƒä¹ </h2><ol><li>ä¸ºä»€ä¹ˆæ’å…¥æ—¶ä½¿ç”¨ <code>ActiveModel</code>ï¼ŒæŸ¥è¯¢æ—¶ä½¿ç”¨ <code>Model</code>ï¼Ÿ</li><li>æŠŠé‚®ç®±æ”¹æˆå·²å­˜åœ¨çš„å€¼æ—¶ï¼Œå“ªä¸€å±‚ä¼šé˜»æ­¢å†™å…¥ï¼Ÿ</li><li>æŠŠ <code>one(&amp;db)</code> æ”¹æˆæŸ¥è¯¢å…¨éƒ¨ç”¨æˆ·ï¼Œåº”è¯¥ä½¿ç”¨å“ªä¸ªæ–¹æ³•ï¼Ÿ</li></ol><p class="quiz"><b>æäº¤ç­”æ¡ˆåå†ç»§ç»­ï¼š</b>å†™å‡ºæ’å…¥å’ŒæŒ‰é‚®ç®±æŸ¥è¯¢çš„æ ¸å¿ƒé“¾å¼è°ƒç”¨ï¼Œå¹¶è§£é‡Š <code>Option&lt;Model&gt;</code> çš„å«ä¹‰ã€‚</p><p><a href="0002-create-table-from-sql.html">â† ç¬¬ 2 è¯¾</a> Â· <a href="../reference/sea-orm-cheatsheet.html">é€ŸæŸ¥è¡¨</a> Â· <a href="https://www.sea-ql.org/SeaORM/docs/basic-crud/insert/">å®˜æ–¹ Insert æ–‡æ¡£</a></p></article></main></body></html>
