@@ -1,0 +1,22 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第 5 课：Migration 与关系查询</title><link rel="stylesheet" href="../assets/style.css"></head><body><main><article class="card"><p class="muted">Lesson 0005 · 约 20 分钟</p><h1>从临时建表走向 Migration，并理解关系查询</h1><p>前几课用原始 SQL 快速建表，适合学习；真实项目需要可重复、可追踪的 schema 变更。本课先理解 Migration 的职责，再认识 Entity 关系的查询入口。</p><h2>1. Migration 解决什么问题</h2><ul><li>每次 schema 变更都有版本和顺序。</li><li>新环境可以从零执行，已有环境只执行尚未完成的 migration。</li><li>部署时不依赖手工复制 SQL。</li></ul><p>SeaORM CLI 可以生成 migration 工程；migration 的 <code>up</code> 创建或修改结构，<code>down</code> 撤销最近一次变更。</p><h2>2. 用 Table 构造器描述变更</h2><pre><code>use sea_orm_migration::prelude::*;
+
+manager
+    .create_table(
+        Table::create()
+            .table(User::Table)
+            .if_not_exists()
+            .col(ColumnDef::new(User::Id).integer().not_null().auto_increment().primary_key())
+            .col(ColumnDef::new(User::Email).string().not_null().unique_key())
+            .to_owned(),
+    )
+    .await?;</code></pre><p>迁移代码表达的是 schema 意图；数据库差异由 migration 框架和后端适配处理。生产环境要把 migration 与应用版本一起审查。</p><h2>3. Entity 声明关系</h2><pre><code>#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {
+    #[sea_orm(has_many = "super::order::Entity")]
+    Order,
+}
+
+impl Related&lt;super::order::Entity&gt; for Entity {
+    fn to() -&gt; RelationDef {
+        Relation::Order.def()
+    }
+}</code></pre><p>一对多关系通常由父实体的 <code>has_many</code> 和子实体的外键配合。关系声明不会自动加载数据，查询时仍要明确使用 <code>find_with_related</code> 或关联查询。</p><h2>4. 回忆练习</h2><ol><li>为什么生产环境不应每次启动都执行建表 SQL？</li><li><code>up</code> 和 <code>down</code> 分别承担什么职责？</li><li>声明 <code>has_many</code> 后，如何主动加载关联记录？</li></ol><p class="quiz"><b>提交答案后再继续：</b>用一句话区分 migration 和 Entity，并写出“父实体查询子实体”时要调用的 SeaORM 方法名。</p><p><a href="0004-update-delete-transaction.html">← 第 4 课</a> · <a href="../reference/sea-orm-cheatsheet.html">速查表</a> · <a href="https://www.sea-ql.org/SeaORM/docs/migration/setting-up-migration/">官方 Migration 文档</a></p></article></main></body></html>
