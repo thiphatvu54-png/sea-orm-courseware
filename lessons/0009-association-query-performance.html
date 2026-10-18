@@ -1,0 +1,29 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第 9 课：关联查询与性能优化</title><link rel="stylesheet" href="../assets/style.css"></head><body><main><article class="card"><p class="muted">Lesson 0009 · 约 20 分钟</p><h1>关联查询进阶：少查、少载入、避免 N+1</h1><p>第 6 课和第 8 课已经能在用户、订单之间建立关联。本课把它变成生产可用的查询：只取需要的列、先过滤再关联、分页，并识别 N+1 查询。</p><h2>1. N+1 为什么慢</h2><p>如果先查出 100 个订单，再在循环中对每个订单调用一次 <code>find_by_id</code> 查用户，就会产生 1 次订单查询加 100 次用户查询。数据量一大，网络往返和连接池压力会迅速增加。</p><pre><code>// 容易产生 N+1：每次循环都访问数据库
+let orders = order::Entity::find().all(db).await?;
+for item in orders {
+    let user = user::Entity::find_by_id(item.user_id).one(db).await?;
+}
+
+// 批量关联：由 ORM 组织 JOIN/批量查询
+let rows = order::Entity::find()
+    .find_also_related(user::Entity)
+    .filter(order::Column::Status.eq("paid"))
+    .all(db)
+    .await?;</code></pre><h2>2. 先过滤，再关联</h2><p>把状态、时间范围、租户等条件尽量放到数据库端。数据库先缩小候选集，关联和传输的数据都会减少。</p><pre><code>use sea_orm::{ColumnTrait, EntityTrait, QueryFilter, QueryOrder, PaginatorTrait};
+
+let page = order::Entity::find()
+    .filter(order::Column::Status.eq("paid"))
+    .filter(order::Column::CreatedAt.gte(start_at))
+    .order_by_desc(order::Column::CreatedAt)
+    .paginate(db, 20);
+
+let orders = page.fetch_page(page_no).await?;</code></pre><p>分页查询必须有稳定排序；常见做法是按 created_at 再按 id 排序，避免同一时间戳导致页面漂移。</p><h2>3. 只选择需要的字段</h2><p>列表页通常不需要完整模型。使用 <code>select_only</code> 可减少磁盘读取、网络传输和反序列化成本。</p><pre><code>let summaries = order::Entity::find()
+    .select_only()
+    .column(order::Column::Id)
+    .column(order::Column::UserId)
+    .column(order::Column::Status)
+    .column(order::Column::Total)
+    .filter(order::Column::Status.eq("paid"))
+    .into_model&lt;OrderSummary&gt;()
+    .all(db)
+    .await?;</code></pre><p><code>OrderSummary</code> 只保留页面需要的字段。详情页再查询完整模型，避免把列表页做成“全字段扫描”。</p><h2>4. 用 EXPLAIN 验证，而不是凭感觉</h2><ol><li>先确认过滤列和外键列有合适索引。</li><li>查看 ORM 生成的 SQL，确认条件没有被放到应用层。</li><li>在数据库中执行 EXPLAIN/EXPLAIN ANALYZE，观察是否全表扫描、排序或错误的连接顺序。</li><li>用真实数据量压测，再比较平均延迟、P95 和扫描行数。</li></ol><h2>5. 练习：改写一个慢查询</h2><p>给定需求：“查询最近 30 天已支付订单的 id、金额和用户邮箱，每页 20 条”。请写出：</p><ul><li>订单过滤条件与稳定排序</li><li>关联用户的方法</li><li>避免 N+1 的理由</li><li>你会检查哪些索引和 EXPLAIN 指标</li></ul><p class="quiz"><b>提交答案后再继续：</b>解释为什么“先过滤再关联”通常比“查全量后在 Rust 里过滤”更好，并指出一个 N+1 查询的改写方式。</p><p><a href="0008-belongs-to-foreign-keys.html">← 第 8 课</a> · <a href="../reference/sea-orm-cheatsheet.html">速查表</a> · <a href="https://www.sea-ql.org/SeaORM/docs/advanced-query/">SeaORM 官方查询文档</a></p></article></main></body></html>
