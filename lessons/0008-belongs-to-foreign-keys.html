@@ -1,0 +1,22 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第 8 课：belongs_to 与外键</title><link rel="stylesheet" href="../assets/style.css"></head><body><main><article class="card"><p class="muted">Lesson 0008 · 约 20 分钟</p><h1>从订单反查用户：belongs_to 与外键</h1><p>第 6 课是用户查订单（一对多），本课反过来从订单查所属用户（多对一）。</p><h2>1. 子实体声明 belongs_to</h2><pre><code>#[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
+pub enum Relation {
+    #[sea_orm(
+        belongs_to = "super::user::Entity",
+        from = "Column::UserId",
+        to = "super::user::Column::Id"
+    )]
+    User,
+}
+
+impl Related&lt;super::user::Entity&gt; for Entity {
+    fn to() -&gt; RelationDef { Relation::User.def() }
+}</code></pre><p>订单表保存 user_id，所以 order 是子实体，user 是父实体。belongs_to 描述外键方向。</p><h2>2. 查询订单及所属用户</h2><pre><code>let rows = order::Entity::find()
+    .find_also_related(user::Entity)
+    .all(&amp;db)
+    .await?;
+
+for (order, user) in rows {
+    if let Some(user) = user {
+        println!("order {} belongs to {}", order.id, user.email);
+    }
+}</code></pre><p>find_also_related 返回订单和可选的用户。因为关联记录可能不存在，所以父实体是 Option&lt;user::Model&gt;。</p><h2>3. 外键和删除策略</h2><p>数据库外键保证 user_id 指向真实用户。删除用户时，RESTRICT、CASCADE、SET NULL 等策略会产生不同结果；策略必须和业务规则一致。</p><h2>4. 回忆练习</h2><ol><li>为什么订单使用 belongs_to，而用户使用 has_many？</li><li>find_also_related 中用户为什么是 Option？</li><li>删除用户时 CASCADE 可能带来什么风险？</li></ol><p class="quiz"><b>提交答案后再继续：</b>写出订单查用户的核心方法，并解释外键方向。</p><p><a href="0007-migration-up-down-complete.html">← 第 7 课</a> · <a href="../reference/sea-orm-cheatsheet.html">速查表</a> · <a href="https://www.sea-ql.org/SeaORM/docs/relation/relational-model/">官方关系模型文档</a></p></article></main></body></html>
