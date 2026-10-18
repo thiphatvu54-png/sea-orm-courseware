@@ -1,0 +1,18 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第 4 课：更新、删除与事务</title><link rel="stylesheet" href="../assets/style.css"></head><body><main><article class="card"><p class="muted">Lesson 0004 · 约 20 分钟</p><h1>把 CRUD 补完整：更新、删除与事务</h1><p>上一课已经能插入并查询用户。本课学习如何把查询结果转换成 ActiveModel，安全地更新和删除，并用事务保证多步操作的一致性。</p><h2>1. 更新一行</h2><pre><code>use sea_orm::{ActiveModelTrait, EntityTrait, Set};
+
+if let Some(model) = user::Entity::find_by_id(1).one(&db).await? {
+    let mut active: user::ActiveModel = model.into();
+    active.display_name = Set("Alice Chen".to_owned());
+    let updated = active.update(&db).await?;
+    assert_eq!(updated.display_name, "Alice Chen");
+}</code></pre><p>查询得到的 <code>Model</code> 可以通过 <code>into()</code> 转成 <code>ActiveModel</code>。只修改需要变化的字段，再调用 <code>update</code>。</p><h2>2. 删除一行</h2><pre><code>use sea_orm::EntityTrait;
+
+user::Entity::delete_by_id(1).exec(&db).await?;
+let missing = user::Entity::find_by_id(1).one(&db).await?;
+assert!(missing.is_none());</code></pre><p>删除前应先确认业务权限；数据库层的外键和级联规则也会影响删除是否成功。</p><h2>3. 用事务包住多步写入</h2><pre><code>use sea_orm::{ConnectionTrait, TransactionTrait};
+
+let txn = db.begin().await?;
+// 在 txn 上执行多次 insert / update
+// 任意一步返回 Err，整个事务都可以回滚
+user::Entity::insert(active_user).exec(&txn).await?;
+txn.commit().await?;</code></pre><p>事务把多次写操作变成一个原子单元。真实业务中不要混用 <code>&amp;db</code> 和 <code>&amp;txn</code>，同一组操作应全部使用事务连接。</p><div class="callout"><b>安全检查：</b>更新和删除都要带明确条件；先用查询验证目标，再执行写操作。不要把用户输入直接拼进 SQL 字符串。</div><h2>4. 回忆练习</h2><ol><li><code>Model</code> 为什么要转换成 <code>ActiveModel</code> 才能更新？</li><li>如果事务中的第二次写入失败，第一次写入应该是什么状态？</li><li>批量删除时，如何避免误删全部用户？</li></ol><p class="quiz"><b>提交答案后再继续：</b>写出“查询 → 修改字段 → update”的三步代码，并说明事务何时需要 rollback。</p><p><a href="0003-insert-and-query.html">← 第 3 课</a> · <a href="../reference/sea-orm-cheatsheet.html">速查表</a> · <a href="https://www.sea-ql.org/SeaORM/docs/advanced-query/transaction/">官方事务文档</a></p></article></main></body></html>
