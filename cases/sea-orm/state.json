@@ -1,0 +1,16 @@
+{
+  "topic": "SeaORM",
+  "current_lesson": 12,
+  "status": "in_progress",
+  "completed_lessons": [10, 11],
+  "next_steps": [
+    "复述 from_col 的方向：bakery.name → BakeryList::brand",
+    "说明 left_join 与 nested 如何共同决定查询列",
+    "完成复述后将第十二课标记为 complete"
+  ],
+  "evidence": {
+    "lesson_file": "lessons/0012-nested-partial-model.html",
+    "source": "SeaORM 官方 Select 与 Custom Select 文档",
+    "understood": "已掌握 PartialModel、column_as、分组聚合，以及 SQL 形状测试与 MockDatabase 的互补边界；Option 语义正确，from_col 映射方向正在巩固"
+  }
+}

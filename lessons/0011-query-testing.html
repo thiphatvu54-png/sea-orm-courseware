@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 11 课：测试生成的 SQL 与 MockDatabase</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0011 · SeaORM · 约 15 分钟</p>
+<h1>把查询列清单变成可回归的测试</h1>
+<p>第 10 课解决了“查询哪些列”。本课解决“以后怎么保证它仍然只查询这些列”。</p>
+
+<h2>1. 直接检查生成的 SQL</h2>
+<pre><code>use sea_orm::{DbBackend, DerivePartialModel, QueryTrait};
+
+#[derive(Debug, DerivePartialModel)]
+#[sea_orm(entity = "user::Entity")]
+struct UserListItem {
+    pub id: i32,
+    pub email: String,
+}
+
+let sql = user::Entity::find()
+    .into_partial_model::&lt;UserListItem&gt;()
+    .build(DbBackend::Postgres)
+    .to_string();
+
+assert!(sql.contains("\"id\""));
+assert!(sql.contains("\"email\""));
+assert!(!sql.contains("\"password_hash\""));</code></pre>
+<p><code>build(...).to_string()</code> 适合验证 SQL 形状：列是否存在、敏感列是否意外出现、别名是否正确。</p>
+
+<h2>2. 用 MockDatabase 验证查询流程</h2>
+<pre><code>// Cargo.toml：启用 sea-orm 的 mock feature
+let db = MockDatabase::new(DatabaseBackend::Postgres)
+    .append_query_results([vec![UserListItem { id: 1, email: "a@x.test".into() }]])
+    .into_connection();
+
+let rows = user::Entity::find()
+    .into_partial_model::&lt;UserListItem&gt;()
+    .all(&amp;db)
+    .await?;
+
+assert_eq!(rows[0].email, "a@x.test");</code></pre>
+<p>MockDatabase 不连接真实数据库；它提供预设结果，并记录执行过的查询，适合快速验证映射和应用逻辑。</p>
+
+<div class="quiz"><b>练习：</b>为什么“检查生成 SQL”与“MockDatabase 返回结果”是两种互补的测试？各自能发现什么错误？</div>
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/basic-crud/raw-sql/">生成 SQL</a> · <a href="https://www.sea-ql.org/SeaORM/docs/write-test/testing/">Writing Tests</a> · <a href="https://www.sea-ql.org/SeaORM/docs/0.12.x/write-test/mock/">Mock Interface</a></p>
+<p>有疑问可以直接追问；下一步会把查询测试接到服务层。</p>
+<p><a href="0010-custom-select-partial-model.html">← 第 10 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+<script src="../assets/courseware.js"></script>
+</body>
+</html>

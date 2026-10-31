@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 12 课：关联查询中的嵌套 PartialModel</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0012 · SeaORM 2.0 · 约 15 分钟</p>
+<h1>用嵌套 DTO 表达关联查询</h1>
+<p>当列表同时需要主表和关联表的少数列时，<code>#[sea_orm(nested)]</code> 可以让 DTO 结构直接表达查询结果。</p>
+
+<h2>1. 定义父 DTO 与子 DTO</h2>
+<pre><code>use sea_orm::DerivePartialModel;
+
+#[derive(Debug, DerivePartialModel)]
+#[sea_orm(entity = "cake::Entity")]
+struct CakeList {
+    pub id: i32,
+    pub name: String,
+    #[sea_orm(nested)]
+    pub bakery: Option&lt;BakeryList&gt;,
+}
+
+#[derive(Debug, DerivePartialModel)]
+#[sea_orm(entity = "bakery::Entity")]
+struct BakeryList {
+    pub id: i32,
+    #[sea_orm(from_col = "name")]
+    pub brand: String,
+}</code></pre>
+<p><code>Option&lt;BakeryList&gt;</code> 对应左连接：没有关联面包店时，结果可以是 <code>None</code>。<code>from_col</code> 把实体列 <code>name</code> 映射到 DTO 字段 <code>brand</code>。</p>
+
+<h2>2. 让查询由 DTO 驱动</h2>
+<pre><code>let rows: Vec&lt;CakeList&gt; = cake::Entity::find()
+    .left_join(bakery::Entity)
+    .into_partial_model()
+    .all(db)
+    .await?;</code></pre>
+<p>SeaORM 会根据嵌套结构选择所需列，并为关联列生成前缀别名，避免两个表都有 <code>id</code>、<code>name</code> 时发生冲突。</p>
+
+<div class="quiz"><b>练习：</b>解释为什么这里用 <code>Option&lt;BakeryList&gt;</code>，以及 <code>from_col = "name"</code> 解决了什么问题。</div>
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/relation/nested-selects/">Nested Selects</a> · <a href="https://www.sea-ql.org/SeaORM/docs/advanced-query/custom-select/">Custom Select</a></p>
+<p>请直接回答练习；下一步会把嵌套查询和第 11 课的 SQL 测试结合起来。</p>
+<p><a href="0011-query-testing.html">← 第 11 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+<script src="../assets/courseware.js"></script>
+</body>
+</html>
