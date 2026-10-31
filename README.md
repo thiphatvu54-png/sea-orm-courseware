@@ -4,8 +4,12 @@
 
 ## 课程
 
+- [课程目录](lessons/index.html)
 - [第 1 课：连接数据库并理解 Entity](lessons/0001-hello-sea-orm.html)
+- [第 10 课：自定义查询与 PartialModel](lessons/0010-custom-select-partial-model.html)
 - [SeaORM 速查表](reference/sea-orm-cheatsheet.html)
+
+当前已完成第 1～10 课。
 
 官方资料：
 
