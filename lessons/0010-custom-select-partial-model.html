@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 10 课：SeaORM 2.0 自定义查询与 PartialModel</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0010 · SeaORM 2.0 · 约 20 分钟</p>
+<h1>只查询需要的列：select_only 与 PartialModel</h1>
+<p>关联查询返回完整 Model 很方便，但列表接口常常只需要少数列。本课学习如何减少 SQL 返回的数据，并把查询结果映射成 DTO。</p>
+
+<h2>1. 传统方式：select_only</h2>
+<p class="label">建议文件：<code>src/services/category_service.rs</code> 或现有查询 service 文件</p>
+<pre><code>use sea_orm::{ColumnTrait, EntityTrait, QuerySelect};
+
+let rows = category::Entity::find()
+    .select_only()
+    .column(category::Column::Id)
+    .column(category::Column::Name)
+    .filter(category::Column::Name.contains("book"))
+    .all(db)
+    .await?;</code></pre>
+<p><code>select_only()</code> 清空默认列，再用 <code>column</code> 指定需要的列。这样不会把详情字段全部读出来。</p>
+
+<h2>2. 用 column_as 给表达式命名</h2>
+<pre><code>use sea_orm::{Expr, QuerySelect};
+
+let rows = order::Entity::find()
+    .select_only()
+    .column(order::Column::Id)
+    .column_as(order::Column::Total.sum(), "total_amount")
+    .into_tuple::&lt;(i64, Decimal)&gt;()
+    .all(db)
+    .await?;</code></pre>
+<p>聚合表达式必须有别名，别名要和结果结构或 tuple 的顺序对应。</p>
+
+<h2>3. SeaORM 2.0 推荐：DerivePartialModel</h2>
+<p class="label">文件：<code>src/dtos/categories.rs</code> 或查询专用 DTO 文件</p>
+<pre><code>use sea_orm::DerivePartialModel;
+
+#[derive(Debug, sea_orm::DerivePartialModel)]
+#[sea_orm(entity = "category::Entity")]
+pub struct CategoryListItem {
+    pub id: i32,
+    pub name: String,
+}
+
+let rows: Vec&lt;CategoryListItem&gt; = category::Entity::find()
+    .into_partial_model()
+    .filter(category::Column::Name.contains("book"))
+    .all(db)
+    .await?;</code></pre>
+<p>PartialModel 让结构体字段成为“查询列清单”，比手动维护 <code>select_only</code> 更不容易漏改。</p>
+
+<h2>4. 在 controller 返回 Response</h2>
+<p class="label">文件：<code>src/controllers/categories.rs</code></p>
+<pre><code>pub async fn list(
+    State(ctx): State&lt;AppContext&gt;,
+) -&gt; loco_rs::Result&lt;Response&gt; {
+    let rows = category_service::list_summary(&amp;ctx.db).await?;
+    loco_rs::controller::format::json(rows)
+}</code></pre>
+<p>查询放 service，HTTP Response 放 controller：这样数据库查询和接口格式不会混在一起。</p>
+
+<h2>5. 验证 SQL 与效果</h2>
+<pre><code>cargo test
+cargo loco routes</code></pre>
+<p>打开 SeaORM debug log，确认列表接口只 SELECT 需要的列；大表分页时继续结合第 6 课的分页方法。</p>
+
+<div class="quiz"><b>回忆题：</b><code>select_only</code> 的作用是什么？什么时候更适合用 <code>DerivePartialModel</code>？</div>
+<details><summary>答案</summary>
+<p>它清空默认选择列；当接口有稳定的列表 DTO、且不想手写列清单时，使用 PartialModel 更清晰。</p>
+</details>
+
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/basic-crud/select/">Select</a> · <a href="https://www.sea-ql.org/SeaORM/docs/advanced-query/custom-select/">Custom Select</a>。下一课可以继续事务或测试。</p>
+<p><a href="0009-association-query-performance.html">← 第 9 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+</body>
+</html>
