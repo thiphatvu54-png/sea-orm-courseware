@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 14 课：三种关联加载 API 的边界</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0014 · SeaORM · 约 20 分钟</p>
+<h1>按需求选择关联查询 API</h1>
+<p>先判断两个问题：你需要完整 Model 还是少数列？关系是一对一还是一对多？答案决定 API，也决定最终 SQL 的形状。</p>
+
+<h2>1. <code>find_with_related</code>：完整 Model + 批量关联</h2>
+<pre><code>let rows: Vec&lt;(user::Model, Vec&lt;post::Model&gt;)&gt; = user::Entity::find()
+    .find_with_related(post::Entity)
+    .all(db)
+    .await?;</code></pre>
+<p>适合旧实体和完整父子 Model。它通常执行两条 SQL（以下为 PostgreSQL 风格的概念 SQL）：</p>
+<pre><code>SELECT "user".*
+FROM "user";
+
+SELECT "post".*
+FROM "post"
+WHERE "post"."user_id" IN (1, 2, 3, ...);</code></pre>
+<p>结果由 ORM 按外键分组为 <code>(user::Model, Vec&lt;post::Model&gt;)</code>。</p>
+
+<h2>2. 嵌套 PartialModel：一对一关系的精确列投影</h2>
+<pre><code>#[derive(DerivePartialModel)]
+#[sea_orm(entity = "user::Entity")]
+struct UserList {
+    pub id: i32,
+    pub email: String,
+    #[sea_orm(nested)]
+    pub profile: Option&lt;ProfileList&gt;,
+}
+
+#[derive(DerivePartialModel)]
+#[sea_orm(entity = "profile::Entity")]
+struct ProfileList {
+    #[sea_orm(from_col = "display_name")]
+    pub name: String,
+}
+
+let rows: Vec&lt;UserList&gt; = user::Entity::find()
+    .left_join(profile::Entity)
+    .into_partial_model()
+    .all(db)
+    .await?;</code></pre>
+<p>对应的概念 SQL 是一条左连接，只选择 DTO 需要的列：</p>
+<pre><code>SELECT
+    "user"."id" AS "id",
+    "user"."email" AS "email",
+    "profile"."display_name" AS "profile_name"
+FROM "user"
+LEFT JOIN "profile"
+    ON "user"."id" = "profile"."user_id";</code></pre>
+<p>这里 PartialModel 负责“选哪些列”和“如何映射字段”；<code>Option</code> 表示没有 profile 时为 <code>None</code>。</p>
+
+<h2>3. Entity Loader：SeaORM 2.0 的加载策略</h2>
+<pre><code>let users = user::Entity::load()
+    .with(post::Entity)
+    .all(db)
+    .await?;</code></pre>
+<p>对一对多关系，典型 SQL 形状仍是两条批量查询：</p>
+<pre><code>SELECT "user".*
+FROM "user";
+
+SELECT "post".*
+FROM "post"
+WHERE "post"."user_id" IN (1, 2, 3, ...);</code></pre>
+<p>它返回嵌套的 ModelEx，并自动选择 join 或批量加载策略；需要 <code>#[sea_orm::model]</code> 或 <code>#[sea_orm::compact_model]</code> 实体格式。</p>
+
+<div class="quiz"><b>练习：</b>需求是“用户列表只返回 id、email，并带每个用户文章的 title”。你会优先选择哪个 API？如果必须保留完整旧实体，选择会怎样变化？</div>
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/basic-crud/select/">Select 与 find_with_related</a> · <a href="https://www.sea-ql.org/SeaORM/docs/relation/nested-selects/">Nested Selects</a> · <a href="https://www.sea-ql.org/SeaORM/docs/relation/entity-loader/">Entity Loader</a></p>
+<p>以后课程中的每个查询示例都会同时给出 Rust 代码和对应 SQL；数据库方言差异会明确标注。</p>
+<p><a href="0013-entity-loader.html">← 第 13 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+<script src="../assets/courseware.js"></script>
+</body>
+</html>

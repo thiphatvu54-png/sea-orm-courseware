@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 18 课：Service 层事务边界与错误传播</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0018 · SeaORM · 快速课</p>
+<h1>把多个写操作变成一个原子动作</h1>
+<p>Service 层定义事务边界；Controller 只调用 Service。任一步写入失败，整个事务回滚。</p>
+
+<h2>Rust 代码</h2>
+<pre><code>let user_id = db
+    .transaction::&lt;_, _, DbErr&gt;(|txn| {
+        Box::pin(async move {
+            let user = user::ActiveModel {
+                name: Set("Alice".into()),
+                ..Default::default()
+            }
+            .insert(txn)
+            .await?;
+
+            order::ActiveModel {
+                user_id: Set(user.id),
+                ..Default::default()
+            }
+            .insert(txn)
+            .await?;
+
+            Ok(user.id)
+        })
+    })
+    .await?;</code></pre>
+
+<h2>成功时的 SQL</h2>
+<pre><code>BEGIN;
+INSERT INTO "user" ("name") VALUES ('Alice');
+INSERT INTO "order" ("user_id") VALUES (1);
+COMMIT;</code></pre>
+
+<h2>第二次写入失败时</h2>
+<pre><code>BEGIN;
+INSERT INTO "user" ("name") VALUES ('Alice');
+ROLLBACK;</code></pre>
+<p><code>?</code> 会把错误传播到事务边界；不会留下只创建用户、却没有订单的半成品。</p>
+
+<div class="quiz"><b>练习：</b>如果第二次 <code>INSERT</code> 失败，最终状态是 COMMIT 还是 ROLLBACK？数据库里是否会保留 Alice？</div>
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/advanced-query/transaction/">SeaORM Transaction</a></p>
+<p>本课继续同时给出 Rust 代码和概念 SQL。</p>
+<p><a href="0017-pagination-indexes.html">← 第 17 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+<script src="../assets/courseware.js"></script>
+</body>
+</html>

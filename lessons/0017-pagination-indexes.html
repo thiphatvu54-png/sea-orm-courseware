@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 17 课：分页查询的索引与 EXPLAIN</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0017 · SeaORM · 约 15 分钟</p>
+<h1>让复合游标真正走索引</h1>
+<p>分页条件、排序条件和索引顺序应该互相匹配。否则虽然 SQL 正确，数据库仍可能扫描大量无关行。</p>
+
+<h2>1. Rust 查询</h2>
+<pre><code>let mut cursor = post::Entity::find()
+    .filter(post::Column::Status.eq("published"))
+    .order_by_desc(post::Column::CreatedAt)
+    .order_by_desc(post::Column::Id)
+    .cursor_by((post::Column::CreatedAt, post::Column::Id));
+
+cursor.after((last_created_at, last_id));
+let rows = cursor.first(20).all(db).await?;</code></pre>
+
+<h2>2. 对应 SQL 与索引</h2>
+<pre><code>SELECT id, status, created_at, title
+FROM "post"
+WHERE status = 'published'
+  AND (created_at, id) &lt; ($1, $2)
+ORDER BY created_at DESC, id DESC
+LIMIT 20;
+
+CREATE INDEX idx_post_status_created_id
+ON "post" (status, created_at DESC, id DESC);</code></pre>
+<p>把过滤列 <code>status</code> 放在索引前缀，把游标和排序列放在后面，数据库更容易直接定位到下一页。</p>
+
+<h2>3. 用 EXPLAIN 验证</h2>
+<pre><code>EXPLAIN (ANALYZE, BUFFERS)
+SELECT id, status, created_at, title
+FROM "post"
+WHERE status = 'published'
+  AND (created_at, id) &lt; ($1, $2)
+ORDER BY created_at DESC, id DESC
+LIMIT 20;</code></pre>
+<pre><code>Limit
+  -&gt; Index Scan using idx_post_status_created_id on post
+       Index Cond: (
+         status = 'published'
+         AND (created_at, id) &lt; ($1, $2)
+       )</code></pre>
+<p>上面的计划是 PostgreSQL 风格的概念输出；真实计划要看数据量、统计信息和数据库版本。</p>
+
+<div class="quiz"><b>练习：</b>如果只有 <code>(created_at, id)</code> 索引，没有把 <code>status</code> 放进索引，为什么仍可能扫描大量非 <code>published</code> 行？</div>
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/basic-crud/select/">SeaORM Select</a> · 数据库的 <code>EXPLAIN</code> 文档。</p>
+<p>本课继续同时提供 Rust 代码、最终 SQL 和概念执行计划。</p>
+<p><a href="0016-composite-cursors.html">← 第 16 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+<script src="../assets/courseware.js"></script>
+</body>
+</html>

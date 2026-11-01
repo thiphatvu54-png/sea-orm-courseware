@@ -14,6 +14,8 @@
   说明关联查询中的嵌套 PartialModel、自动别名与多级结果结构。
 - [SeaORM Entity Loader](https://www.sea-ql.org/SeaORM/docs/relation/entity-loader/)
   说明 SeaORM 2.0 如何为一对一、一对多和多对多关系选择加载策略并避免 N+1。
+- [SeaORM Select](https://www.sea-ql.org/SeaORM/docs/basic-crud/select/)
+  包含 `find_with_related` 与关联结果组合的基础 API。
 
 ## Wisdom
 

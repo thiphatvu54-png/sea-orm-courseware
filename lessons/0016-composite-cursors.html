@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 16 课：复合游标与稳定排序</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0016 · SeaORM · 约 15 分钟</p>
+<h1>用复合游标避免重复与遗漏</h1>
+<p>只按 <code>created_at</code> 分页不够稳定：多条记录可能拥有相同时间戳。用唯一的 <code>id</code> 作为第二排序键，可以建立确定的顺序。</p>
+
+<h2>1. Rust 查询</h2>
+<pre><code>let mut cursor = post::Entity::find()
+    .order_by_desc(post::Column::CreatedAt)
+    .order_by_desc(post::Column::Id)
+    .cursor_by((post::Column::CreatedAt, post::Column::Id));
+
+cursor.after((last_created_at, last_id));
+let rows = cursor.first(20).all(db).await?;</code></pre>
+
+<h2>2. 对应 SQL</h2>
+<p>PostgreSQL 风格的概念 SQL：</p>
+<pre><code>SELECT "post".*
+FROM "post"
+WHERE ("created_at", "id") &lt; ($1, $2)
+ORDER BY "created_at" DESC, "id" DESC
+LIMIT 20;</code></pre>
+<p>跨数据库时，ORM 也可能展开成等价条件：</p>
+<pre><code>WHERE "created_at" &lt; $1
+   OR ("created_at" = $1 AND "id" &lt; $2)</code></pre>
+<p>游标条件必须与 <code>ORDER BY</code> 方向一致；否则会跳过记录或重复返回记录。</p>
+
+<div class="quiz"><b>练习：</b>为什么只使用 <code>created_at</code> 作为游标，在同一时间戳有多条记录时会不稳定？<code>id</code> 在这里承担什么角色？</div>
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/basic-crud/select/">SeaORM Select 与游标</a></p>
+<p>本课继续同时提供 Rust 代码和概念 SQL；具体占位符与行值比较语法依数据库方言而异。</p>
+<p><a href="0015-pagination-cursors.html">← 第 15 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+<script src="../assets/courseware.js"></script>
+</body>
+</html>

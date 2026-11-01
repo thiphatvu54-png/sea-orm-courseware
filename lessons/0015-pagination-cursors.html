@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 15 课：偏移分页与游标分页</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0015 · SeaORM · 约 15 分钟</p>
+<h1>为列表接口选择分页方式</h1>
+<p>分页查询必须有稳定排序。偏移分页适合跳到任意页，游标分页适合无限滚动和深页读取。</p>
+
+<h2>1. 偏移分页：LIMIT + OFFSET</h2>
+<pre><code>let mut pages = post::Entity::find()
+    .order_by_asc(post::Column::Id)
+    .paginate(db, 20);
+
+let rows = pages.fetch_page(2).await?;</code></pre>
+<p>第 2 页、每页 20 条的概念 SQL：</p>
+<pre><code>SELECT "post".*
+FROM "post"
+ORDER BY "id" ASC
+LIMIT 20 OFFSET 40;</code></pre>
+<p>优点是可以直接跳页；缺点是深页需要跳过大量行，数据变化时也更容易出现重复或遗漏。</p>
+
+<h2>2. 游标分页：从上一页最后一个键继续</h2>
+<pre><code>let mut cursor = post::Entity::find()
+    .order_by_asc(post::Column::Id)
+    .cursor_by(post::Column::Id);
+
+cursor.after(last_id);
+let rows = cursor.first(20).all(db).await?;</code></pre>
+<p>概念 SQL：</p>
+<pre><code>SELECT "post".*
+FROM "post"
+WHERE "id" &gt; $1
+ORDER BY "id" ASC
+LIMIT 20;</code></pre>
+<p>游标列必须有稳定排序；实际项目中通常选择唯一且有索引的键，或使用 <code>(created_at, id)</code> 这样的复合游标。</p>
+
+<div class="quiz"><b>练习：</b>后台管理页面需要跳到第 50 页，移动端信息流只需要“加载更多”。分别选择哪种分页方式？为什么？</div>
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/basic-crud/select/">SeaORM Select、分页与游标</a></p>
+<p>本课示例同时给出 Rust 代码和 PostgreSQL 风格概念 SQL；不同数据库的占位符可能不同。</p>
+<p><a href="0014-relation-loading-boundaries.html">← 第 14 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+<script src="../assets/courseware.js"></script>
+</body>
+</html>
