@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 19 课：Upsert 与幂等写入</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0019 · SeaORM · 快速课</p>
+<h1>用唯一键处理重复请求</h1>
+<p>幂等写入的关键不是在 Rust 里先查再插入，而是让数据库唯一约束定义冲突边界。</p>
+
+<h2>1. 重复时更新：DO UPDATE</h2>
+<pre><code>use sea_orm::{ActiveValue::Set, EntityTrait};
+use sea_orm::sea_query::OnConflict;
+
+user::Entity::insert(user::ActiveModel {
+    email: Set("a@x.test".into()),
+    name: Set("Alice".into()),
+    ..Default::default()
+})
+.on_conflict(
+    OnConflict::column(user::Column::Email)
+        .update_column(user::Column::Name)
+        .to_owned()
+)
+.exec(db)
+.await?;</code></pre>
+<pre><code>CREATE UNIQUE INDEX users_email_key ON "user" ("email");
+
+INSERT INTO "user" ("email", "name")
+VALUES ('a@x.test', 'Alice')
+ON CONFLICT ("email") DO UPDATE
+SET "name" = EXCLUDED."name";</code></pre>
+
+<h2>2. 重复时忽略：DO NOTHING</h2>
+<pre><code>.on_conflict(
+    OnConflict::column(user::Column::Email)
+        .do_nothing()
+        .to_owned()
+)</code></pre>
+<pre><code>INSERT INTO "user" ("email", "name")
+VALUES ('a@x.test', 'Alice')
+ON CONFLICT ("email") DO NOTHING;</code></pre>
+<p>注册接口通常只允许第一次创建，适合 <code>DO NOTHING</code>；资料同步接口希望覆盖最新字段，适合 <code>DO UPDATE</code>。</p>
+
+<div class="quiz"><b>练习：</b>“重复注册同一邮箱”和“同步用户最新昵称”分别选择 <code>DO NOTHING</code> 还是 <code>DO UPDATE</code>？</div>
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/advanced-query/advanced-joins/">SeaORM 查询构造</a> · SeaQuery <code>OnConflict</code>。</p>
+<p>本课继续同时给出 Rust 代码和 PostgreSQL 风格概念 SQL。</p>
+<p><a href="0018-service-transactions.html">← 第 18 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+<script src="../assets/courseware.js"></script>
+</body>
+</html>

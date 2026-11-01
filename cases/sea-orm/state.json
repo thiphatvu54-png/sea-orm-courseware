@@ -1,16 +1,16 @@
 {
   "topic": "SeaORM",
-  "current_lesson": 18,
+  "current_lesson": 20,
   "status": "in_progress",
-  "completed_lessons": [10, 11, 12, 13, 14, 15, 16, 17],
+  "completed_lessons": [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
   "next_steps": [
-    "阅读第 18 课：service 层事务边界与错误传播",
-    "判断第二次写入失败时应该出现 COMMIT 还是 ROLLBACK",
-    "用一个事务包住多个相关写操作"
+    "阅读第 20 课：批量插入与写入效率",
+    "比较循环 insert 与 insert_many 的 SQL 形状",
+    "判断什么时候需要分批提交"
   ],
   "evidence": {
-    "lesson_file": "lessons/0018-service-transactions.html",
+    "lesson_file": "lessons/0020-bulk-insert.html",
     "source": "SeaORM 官方 Select 与 Custom Select 文档",
-    "understood": "已掌握 PartialModel、column_as、分组聚合、SQL 形状测试、MockDatabase、nested DTO 映射、Entity Loader、关联 API 选择、偏移/游标分页、复合索引与 EXPLAIN；已切换快速学习模式"
+    "understood": "已掌握 PartialModel、column_as、分组聚合、SQL 形状测试、MockDatabase、nested DTO 映射、Entity Loader、关联 API 选择、偏移/游标分页、复合索引、EXPLAIN、事务原子性与幂等写入；已切换快速学习模式"
   }
 }

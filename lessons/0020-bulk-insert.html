@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 20 课：批量插入与写入效率</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0020 · SeaORM · 快速课</p>
+<h1>用 insert_many 减少数据库往返</h1>
+<p>循环调用 <code>insert</code> 会产生多次往返；批量插入把多行写入合并成一次 SQL。</p>
+
+<h2>Rust 代码</h2>
+<pre><code>let posts = vec![
+    post::ActiveModel {
+        title: Set("First".into()),
+        status: Set("published".into()),
+        ..Default::default()
+    },
+    post::ActiveModel {
+        title: Set("Second".into()),
+        status: Set("published".into()),
+        ..Default::default()
+    },
+];
+
+post::Entity::insert_many(posts)
+    .exec(db)
+    .await?;</code></pre>
+
+<h2>对应 SQL</h2>
+<pre><code>INSERT INTO "post" ("title", "status")
+VALUES
+    ('First', 'published'),
+    ('Second', 'published');</code></pre>
+<p>真实 SQL 会根据数据库方言和 ActiveModel 字段变化；核心形状是一次 <code>INSERT</code> 携带多行。</p>
+
+<h2>快速判断</h2>
+<p>小批量可以直接一次提交；几万行时应按批次拆分，避免单条 SQL 过大、锁持有时间过长或超出参数限制。</p>
+
+<div class="quiz"><b>练习：</b>插入 1000 篇文章时，为什么通常优先用 <code>insert_many</code>，而不是循环调用 1000 次 <code>insert</code>？</div>
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/basic-crud/insert/">SeaORM Insert</a></p>
+<p>本课继续同时提供 Rust 代码和对应 SQL。</p>
+<p><a href="0019-upsert-idempotency.html">← 第 19 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+<script src="../assets/courseware.js"></script>
+</body>
+</html>
