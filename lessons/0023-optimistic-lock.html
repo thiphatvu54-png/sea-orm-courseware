@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 23 课：乐观锁与版本号更新</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0023 · SeaORM · 快速课</p>
+<h1>避免并发请求互相覆盖</h1>
+<p>只按 <code>id</code> 更新会让后写入的请求覆盖先写入的修改。把读取到的 <code>version</code> 一起放进 <code>WHERE</code>，即可检测冲突。</p>
+
+<h2>Rust 代码</h2>
+<pre><code>let result = post::Entity::update_many()
+    .col_expr(post::Column::Title, Expr::value(new_title))
+    .col_expr(
+        post::Column::Version,
+        Expr::col(post::Column::Version).add(1),
+    )
+    .filter(post::Column::Id.eq(post_id))
+    .filter(post::Column::Version.eq(expected_version))
+    .exec(db)
+    .await?;
+
+if result.rows_affected != 1 {
+    return Err(Conflict);
+}</code></pre>
+
+<h2>对应 SQL</h2>
+<pre><code>UPDATE "post"
+SET "title" = $1,
+    "version" = "version" + 1
+WHERE "id" = $2
+  AND "version" = $3;</code></pre>
+<p><code>rows_affected = 0</code> 表示记录不存在，或版本已经被其他请求更新；此时应返回冲突，而不是强行覆盖。</p>
+
+<div class="quiz"><b>练习：</b>为什么不能只按 <code>id</code> 更新？</div>
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/basic-crud/update/">SeaORM Update</a></p>
+<p>本课继续同时给出 Rust 代码和对应 SQL。</p>
+<p><a href="0022-safe-bulk-ops.html">← 第 22 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+<script src="../assets/courseware.js"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 24 课：数据库错误到 API 响应</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0024 · SeaORM · 快速课</p>
+<h1>把数据库结果翻译成稳定的 API 语义</h1>
+<p>Controller 不应直接泄露 <code>DbErr</code>。Service 先判断结果，再映射成客户端能理解的状态。</p>
+
+<h2>Service 代码与 SQL</h2>
+<pre><code>let result = post::Entity::update_many()
+    .col_expr(post::Column::Title, Expr::value(new_title))
+    .filter(post::Column::TenantId.eq(tenant_id))
+    .filter(post::Column::Id.eq(post_id))
+    .exec(db)
+    .await?;
+
+if result.rows_affected == 0 {
+    return Err(AppError::NotFound);
+}</code></pre>
+<pre><code>UPDATE "post"
+SET "title" = $1
+WHERE "tenant_id" = $2
+  AND "id" = $3;</code></pre>
+
+<h2>快速映射</h2>
+<ul>
+<li>成功 → <code>204 No Content</code></li>
+<li>记录不存在 → <code>404 Not Found</code></li>
+<li>唯一约束或乐观锁冲突 → <code>409 Conflict</code></li>
+<li>未分类数据库错误 → <code>500 Internal Server Error</code></li>
+</ul>
+
+<div class="quiz"><b>练习：</b>重复邮箱注册应该返回哪个状态码？</div>
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/basic-crud/update/">SeaORM Update</a></p>
+<p>本课继续同时给出 Rust 代码和对应 SQL。</p>
+<p><a href="0023-optimistic-lock.html">← 第 23 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+<script src="../assets/courseware.js"></script>
+</body>
+</html>
