@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 13 课：Entity Loader 与 N+1 查询</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0013 · SeaORM 2.0 · 约 15 分钟</p>
+<h1>让关联加载策略自动避开 N+1</h1>
+<p>第 9 课介绍了 N+1 的问题；本课学习 SeaORM 2.0 的 Entity Loader 如何按关系类型选择加载策略。</p>
+
+<h2>1. 一对一关系：用 join 一次取回</h2>
+<pre><code>let user = user::Entity::load()
+    .filter_by_id(42)
+    .with(profile::Entity)
+    .one(db)
+    .await?
+    .unwrap();</code></pre>
+<p>一对一关系适合 join：用户和 profile 可以在一次查询中组合成嵌套结果。</p>
+
+<h2>2. 一对多关系：批量加载，而不是循环查询</h2>
+<pre><code>let users = user::Entity::load()
+    .with(post::Entity)
+    .all(db)
+    .await?;</code></pre>
+<p>Entity Loader 会先取出用户，再用一条批量查询加载这些用户的 posts。它避免了“每个用户调用一次 find_by_id”的 N+1 模式。</p>
+
+<h2>3. 使用前提</h2>
+<p>Entity Loader 需要使用 SeaORM 2.0 的 <code>#[sea_orm::model]</code> 或 <code>#[sea_orm::compact_model]</code> 实体格式；旧实体仍可继续使用 <code>find_with_related</code> 等 API。</p>
+
+<div class="quiz"><b>练习：</b>有 100 个用户，每个用户平均 5 篇文章。为什么在循环中查询文章会产生 N+1？Entity Loader 的批量加载把它改成了什么形状？</div>
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/relation/entity-loader/">Entity Loader</a> · <a href="https://www.sea-ql.org/SeaORM/docs/basic-crud/select/">Select 与关联查询</a></p>
+<p>请直接回答练习；下一步会比较 Entity Loader、<code>find_with_related</code> 与嵌套 PartialModel 的边界。</p>
+<p><a href="0012-nested-partial-model.html">← 第 12 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+<script src="../assets/courseware.js"></script>
+</body>
+</html>

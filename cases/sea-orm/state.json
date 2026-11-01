@@ -1,16 +1,16 @@
 {
   "topic": "SeaORM",
-  "current_lesson": 12,
+  "current_lesson": 13,
   "status": "in_progress",
-  "completed_lessons": [10, 11],
+  "completed_lessons": [10, 11, 12],
   "next_steps": [
-    "复述 from_col 的方向：bakery.name → BakeryList::brand",
-    "说明 left_join 与 nested 如何共同决定查询列",
-    "完成复述后将第十二课标记为 complete"
+    "阅读第 13 课：Entity Loader 与 N+1 查询",
+    "区分一对一关系的 join 与一对多关系的批量加载",
+    "解释 Entity Loader 为什么能减少 N+1"
   ],
   "evidence": {
-    "lesson_file": "lessons/0012-nested-partial-model.html",
+    "lesson_file": "lessons/0013-entity-loader.html",
     "source": "SeaORM 官方 Select 与 Custom Select 文档",
-    "understood": "已掌握 PartialModel、column_as、分组聚合，以及 SQL 形状测试与 MockDatabase 的互补边界；Option 语义正确，from_col 映射方向正在巩固"
+    "understood": "已掌握 PartialModel、column_as、分组聚合、SQL 形状测试、MockDatabase，以及 nested DTO 的实体列到 DTO 字段映射"
   }
 }
