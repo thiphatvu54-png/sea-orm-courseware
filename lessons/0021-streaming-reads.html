@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 21 课：大结果集流式读取</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0021 · SeaORM · 快速课</p>
+<h1>不要把一百万行一次性放进内存</h1>
+<p><code>all(db).await?</code> 会收集完整结果集；流式读取逐行消费，降低应用内存峰值。</p>
+
+<h2>Rust 代码</h2>
+<pre><code>use futures_util::TryStreamExt;
+
+let mut stream = post::Entity::find()
+    .filter(post::Column::Status.eq("published"))
+    .order_by_asc(post::Column::Id)
+    .stream(db)
+    .await?;
+
+while let Some(post) = stream.try_next().await? {
+    process(post);
+}</code></pre>
+
+<h2>对应 SQL</h2>
+<pre><code>SELECT "post".*
+FROM "post"
+WHERE "status" = 'published'
+ORDER BY "id" ASC;</code></pre>
+<p>这条 SQL 仍然返回所有匹配行，但应用侧逐行消费。流会占用连接直到结束或被丢弃；长时间处理时不要同时开启太多流。</p>
+
+<div class="quiz"><b>练习：</b>为什么一百万行不适合直接使用 <code>all(db).await?</code>？什么时候应该改用游标分页而不是 stream？</div>
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/0.9.x/advanced-query/streaming/">SeaORM Streaming</a></p>
+<p>本课继续同时给出 Rust 代码和对应 SQL。</p>
+<p><a href="0020-bulk-insert.html">← 第 20 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+<script src="../assets/courseware.js"></script>
+</body>
+</html>

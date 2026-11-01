@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 22 课：安全批量更新与删除</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<main><article class="card">
+<p class="muted">Lesson 0022 · SeaORM · 快速课</p>
+<h1>批量写操作先写完整 WHERE</h1>
+<p><code>update_many</code> 和 <code>delete_many</code> 没有过滤条件时可能影响整张表。多租户系统尤其不能漏掉 <code>tenant_id</code>。</p>
+
+<h2>批量更新</h2>
+<pre><code>post::Entity::update_many()
+    .col_expr(post::Column::Status, Expr::value("archived"))
+    .filter(post::Column::TenantId.eq(tenant_id))
+    .filter(post::Column::Status.eq("published"))
+    .filter(post::Column::CreatedAt.lt(cutoff))
+    .exec(db)
+    .await?;</code></pre>
+<pre><code>UPDATE "post"
+SET "status" = 'archived'
+WHERE "tenant_id" = $1
+  AND "status" = 'published'
+  AND "created_at" &lt; $2;</code></pre>
+
+<h2>批量删除</h2>
+<pre><code>post::Entity::delete_many()
+    .filter(post::Column::TenantId.eq(tenant_id))
+    .filter(post::Column::Status.eq("draft"))
+    .exec(db)
+    .await?;</code></pre>
+<pre><code>DELETE FROM "post"
+WHERE "tenant_id" = $1
+  AND "status" = 'draft';</code></pre>
+
+<p>生产操作前可先用相同 <code>WHERE</code> 做 <code>SELECT COUNT(*)</code> 预览，并检查返回的 <code>rows_affected</code>。</p>
+<div class="quiz"><b>练习：</b>如果漏掉 <code>tenant_id</code> 条件，在多租户系统中会有什么风险？</div>
+<p class="note"><strong>官方资料：</strong><a href="https://www.sea-ql.org/SeaORM/docs/basic-crud/update/">SeaORM Update</a> · <a href="https://www.sea-ql.org/SeaORM/docs/basic-crud/delete/">SeaORM Delete</a></p>
+<p>本课继续同时给出 Rust 代码和对应 SQL。</p>
+<p><a href="0021-streaming-reads.html">← 第 21 课</a> · <a href="../index.html">返回首页</a></p>
+</article></main>
+<script src="../assets/courseware.js"></script>
+</body>
+</html>
